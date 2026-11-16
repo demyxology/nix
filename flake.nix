@@ -11,7 +11,7 @@
     # XXX: remove this when no longer necessary
     mac-app-util = {
       url = "github:hraban/mac-app-util";
-      inputs.nixpkgs.follows = "nixpkgs";  # temporarily override nixpkgs url to get SBCL v2.6.6
+      inputs.nixpkgs.follows = "nixpkgs"; # temporarily override nixpkgs url to get SBCL v2.6.6
     };
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -20,6 +20,7 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    rex.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
   };
 
   outputs =
@@ -31,6 +32,7 @@
       mac-app-util,
       home-manager,
       lazyvim,
+      rex,
       ...
     }:
     let
@@ -85,6 +87,14 @@
                 home-manager.useUserPackages = true;
                 home-manager.extraSpecialArgs = { inherit inputs; };
                 home-manager.users.nikita = ./home.nix;
+              }
+              rex.nixosModules.default
+              {
+                services.rex.enable = true;
+                users.users.nikita = {
+                  isNormalUser = true;
+                  extraGroups = [ "rex" ];
+                };
               }
             ];
           };

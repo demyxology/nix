@@ -59,6 +59,7 @@
     coreutils-prefixed
     ghostty-bin
     iterm2
+    tailscale
     utm
     vlc-bin
   ];

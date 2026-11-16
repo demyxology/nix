@@ -3,9 +3,8 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 {
-  config,
   pkgs,
-  lib,
+  config,
   ...
 }:
 
@@ -24,6 +23,7 @@ in
     loader.efi.canTouchEfiVariables = true;
     kernelPackages = pkgs.linuxPackages_latest;
     kernelModules = [ "ntsync" ];
+    initrd.systemd.network.wait-online.enable = false; # faster boot w tailscale
   };
 
   fileSystems."/".options = [ "noatime" ];
@@ -36,8 +36,25 @@ in
 
   # powerManagement.cpuFreqGovernor = "performance";
 
-  networking.hostName = "nixos"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking = {
+    hostName = "nixos";
+    nftables.enable = true;
+    firewall = {
+      enable = true;
+      trustedInterfaces = [ config.services.tailscale.interfaceName ];
+      allowedUDPPorts = [ config.services.tailscale.port ];
+    };
+  };
+
+  systemd.services.tailscaled.serviceConfig.Environment = [ 
+    "TS_DEBUG_FIREWALL_MODE=nftables" 
+  ];
+
+  systemd.network.wait-online.enable = false;
+
+  services.tailscale = {
+    enable = true;
+  };
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -225,12 +242,6 @@ in
     enableKvm = true;
     addNetworkInterface = false;
   };
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
