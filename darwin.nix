@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  ...
+}:
 
 let
   commonPkgs = import ./packages.nix { inherit pkgs; };
@@ -27,12 +30,23 @@ in
     ];
   };
 
-  system.defaults = {
-    dock = {
-      autohide = true;
-      mineffect = "scale";
-      minimize-to-application = true;
-      static-only = true;
+  system = {
+    keyboard = {
+      enableKeyMapping = true;
+      remapCapsLockToControl = true;
+    };
+    defaults = {
+      dock = {
+        autohide = true;
+        mineffect = "scale";
+        minimize-to-application = true;
+        static-only = true;
+      };
+
+      finder = {
+        ShowStatusBar = true;
+        _FXShowPosixPathInTitle = true;
+      };
     };
   };
 

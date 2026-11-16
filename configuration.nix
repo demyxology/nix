@@ -52,9 +52,6 @@ in
 
   systemd.network.wait-online.enable = false;
 
-  services.tailscale = {
-    enable = true;
-  };
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
