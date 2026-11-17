@@ -225,6 +225,7 @@ in
       PasswordAuthentication = false;
       AllowUsers = [ "nikita" ];
       PermitRootLogin = "no";
+      X11Forwarding = true;
     };
   };
 

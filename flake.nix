@@ -91,7 +91,9 @@
               }
               rex.nixosModules.default
               {
-                services.rex.enable = true;
+                services.rex = {
+                  enable = true;
+                };
                 users.users.nikita = {
                   isNormalUser = true;
                   extraGroups = [ "rex" ];
