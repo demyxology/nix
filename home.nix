@@ -27,30 +27,46 @@
   programs = {
     zsh = {
       enable = true;
+      package = pkgs.zsh;
       dotDir = config.home.homeDirectory;
-      enableCompletion = true;
-      autosuggestion.enable = true;
+      autosuggestion = {
+        enable = true;
+        strategy = [
+          "match_prev_cmd"
+          "completion"
+        ];
+      };
+      autocd = true;
+      enableVteIntegration = true;
+      history = {
+        append = true;
+        expireDuplicatesFirst = true;
+        findNoDups = true;
+        ignoreAllDups = true;
+        saveNoDups = true;
+      };
       syntaxHighlighting.enable = true;
       shellAliases = {
         e = "nvim";
       };
-      # profileExtra = lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
-      #   eval "$(/opt/homebrew/bin/brew shellenv)"
-      # '';
       initContent = ''
-        # path=("$HOME/.config/emacs/bin" $path)
-        fpath=(${pkgs.pure-prompt}/share/zsh/site-functions $fpath)
-        autoload -U promptinit && promptinit
-        prompt pure
+        if [[ -z $AI_AGENT$CLAUDECODE$CURSOR_AGENT$GEMINI_CLI$OPENCODE ]]; then
+          autoload -U promptinit && promptinit
+          prompt pure
+        fi
+
+        setopt AUTO_MENU AUTO_LIST LIST_AMBIGUOUS LIST_PACKED LIST_TYPES \
+        BAD_PATTERN HIST_REDUCE_BLANKS CORRECT CORRECT_ALL AUTO_RESUME \
+        LONG_LIST_JOBS 
       '';
     };
 
     fzf = {
       enable = true;
       enableZshIntegration = true;
+      tmux.enableShellIntegration = true;
     };
 
-    command-not-found.enable = false;
     nix-index = {
       enable = true;
       enableZshIntegration = true;
@@ -60,6 +76,19 @@
         inputs.nix-index-database.packages.${pkgs.stdenv.hostPlatform.system}.nix-index-with-small-db;
     };
     nix-index-database.comma.enable = true;
+
+    tmux = {
+      enable = true;
+      aggressiveResize = true;
+      baseIndex = 1;
+      disableConfirmationPrompt = true;
+      focusEvents = true;
+      mouse = true;
+      newSession = true;
+      shortcut = "a";
+      terminal = "xterm-ghostty";
+      sensibleOnTop = true;
+    };
 
     lazyvim = {
       enable = true;

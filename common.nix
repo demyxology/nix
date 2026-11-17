@@ -5,17 +5,24 @@
     (import ./berkeley-mono.nix { inherit pkgs; })
   ];
 
-  programs.zsh = {
-    enable = true;
-    enableGlobalCompInit = false;
-    promptInit = "";
+  programs = {
+    zsh = {
+      enable = true;
+      enableBashCompletion = false;
+    };
+
+    tmux.enable = true;
+
   };
 
   nix = {
-    settings.experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
+    settings = {
+      auto-optimise-store = true;
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+    };
 
   };
 
@@ -32,5 +39,14 @@
       EDITOR = "nvim";
     };
     shells = with pkgs; [ zsh ];
+    etc."dict.conf".text = "server dict.org";
   };
+
+  documentation = {
+    enable = true;
+    doc.enable = true;
+    info.enable = true;
+    man.enable = true;
+  };
+
 }

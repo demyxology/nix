@@ -45,14 +45,15 @@ in
 
       finder = {
         ShowStatusBar = true;
+        ShowPathbar = true;
+        FXDefaultSearchScope = "SCcf"; # search current folder
         _FXShowPosixPathInTitle = true;
+        NewWindowTarget = "Home";
       };
     };
   };
 
   security.pam.services.sudo_local.touchIdAuth = true;
-
-  documentation.man.enable = true;
 
   networking = {
     hostName = "dad";

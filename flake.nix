@@ -68,6 +68,7 @@
                   system.configurationRevision = self.rev or self.dirtyRev or null;
                   system.stateVersion = 5;
                   nixpkgs.hostPlatform = "aarch64-darwin";
+                  environment.systemPackages = [ rex.packages.aarch64-darwin.rex ];
                   nix.extraOptions = ''
                     extra-platforms = x86_64-darwin aarch64-darwin
                   '';

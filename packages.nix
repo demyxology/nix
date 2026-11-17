@@ -7,6 +7,7 @@
     btop
     chatgpt
     cmake
+    dict
     discord
     dust
     drawterm
@@ -62,6 +63,7 @@
     tailscale
     utm
     vlc-bin
+    xquartz
   ];
 
   nixosPackages = with pkgs; [
