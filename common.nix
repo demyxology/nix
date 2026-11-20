@@ -12,7 +12,7 @@
     };
 
     tmux.enable = true;
-
+    mosh.enable = true;
   };
 
   nix = {

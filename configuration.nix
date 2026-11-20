@@ -24,6 +24,11 @@ in
     kernelPackages = pkgs.linuxPackages_latest;
     kernelModules = [ "ntsync" ];
     initrd.systemd.network.wait-online.enable = false; # faster boot w tailscale
+    tmp = {
+      cleanOnBoot = true;
+      tmpfsHugeMemoryPages = "within_size";
+      useTmpfs = true;
+    };
   };
 
   fileSystems."/".options = [ "noatime" ];
@@ -203,7 +208,6 @@ in
   nix.package = pkgs.nixVersions.latest;
 
   programs.steam.enable = true;
-  programs.command-not-found.enable = false;
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -227,6 +231,14 @@ in
       PermitRootLogin = "no";
       X11Forwarding = true;
     };
+  };
+
+  documentation.man = {
+    cache = {
+      enable = true;
+      generateAtRuntime = true;
+    };
+    
   };
 
   services.fail2ban.enable = true;
