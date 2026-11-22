@@ -8,7 +8,9 @@
   programs = {
     zsh = {
       enable = true;
+      enableCompletion = false; # enabled by home-manager
       enableBashCompletion = false;
+      promptInit = ""; # overwritten by pure
     };
 
     tmux.enable = true;
@@ -36,6 +38,7 @@
   environment = {
     shells = with pkgs; [ zsh ];
     etc."dict.conf".text = "server dict.org";
+    pathsToLink = [ "/share/zsh" ];
   };
 
   documentation = {

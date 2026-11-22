@@ -35,7 +35,7 @@ fi
 
 case $selection in
   nvim|lazy) command=(nvim) ;;
-  vim) command=(vim) ;;
+  vim) command=(vim -X) ;;
   emacs) command=(emacsclient -t) ;;
   helix) command=(hx) ;;
   kakoune) command=(kak) ;;
