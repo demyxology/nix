@@ -3,10 +3,13 @@
 {
   commonPackages = with pkgs; [
     alacritty
+    antigravity-acp
+    antigravity-cli
+    antigravity-hub
+    antigravity-ide
     bat
     btop
-    chatgpt
-    cmake
+    claude-code
     dict
     discord
     dust
@@ -23,7 +26,6 @@
     irssi
     kakoune
     kitty
-    lmstudio
     llvmPackages.libcxxClang
     llvmPackages.clang-tools
     neovide
@@ -36,7 +38,6 @@
     pi-coding-agent
     plan9port
     pv
-    python3
     qbittorrent
     qemu
     ripgrep
@@ -47,7 +48,7 @@
     tlsclient
     tmux
     tree
-    vim
+    vim-full
     vscode
     wezterm
     wget
@@ -60,10 +61,10 @@
     coreutils-prefixed
     ghostty-bin
     iterm2
+    mosh
     tailscale
     utm
     vlc-bin
-    xquartz
   ];
 
   nixosPackages = with pkgs; [

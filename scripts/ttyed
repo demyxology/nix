@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# ttyed [-n|-l|-v|-e|-h|-k] selects an editor; ttyed [--] [args...] runs it.
+# e='ttyed --' forwards editor options without interpreting them as selections.
+
+fail() {
+  printf 'ttyed: %s\n' "$*" >&2
+  exit 1
+}
+
+state_dir=${XDG_STATE_HOME:-"$HOME/.local/state"}/ttyed
+state_file=$state_dir/editor
+selection=
+selecting=false
+
+case ${1-} in
+  -n) selection=nvim ;;
+  -l) selection=lazy ;;
+  -v) selection=vim ;;
+  -e) selection=emacs ;;
+  -h) selection=helix ;;
+  -k) selection=kakoune ;;
+  --) shift ;;
+  -*) fail "unknown option: $1 (use -- to forward editor options)" ;;
+esac
+
+if [[ -n $selection ]]; then
+  selecting=true
+  [[ $# -eq 1 ]] || fail 'selection flags must be used alone'
+else
+  selection=lazy
+  if [[ -e $state_file || -L $state_file ]]; then
+    selection=$(cat "$state_file") || fail "cannot read $state_file"
+  fi
+fi
+
+case $selection in
+  nvim|lazy) command=(nvim) ;;
+  vim) command=(vim) ;;
+  emacs) command=(emacsclient -t) ;;
+  helix) command=(hx) ;;
+  kakoune) command=(kak) ;;
+  *) fail "invalid selection in $state_file; select an editor with -n/-l/-v/-e/-h/-k" ;;
+esac
+
+command -v "${command[0]}" >/dev/null 2>&1 || fail "${command[0]} is not available on PATH"
+
+# A selection changes only persistent state, never the calling shell's environment.
+if $selecting; then
+  mkdir -p "$state_dir" || fail "cannot create $state_dir"
+  temporary=$(mktemp "$state_dir/editor.XXXXXX") || fail "cannot write in $state_dir"
+  trap 'rm -f "$temporary"' EXIT
+  printf '%s\n' "$selection" > "$temporary" || fail "cannot write $temporary"
+  mv -f "$temporary" "$state_file" || fail "cannot replace $state_file"
+  exit 0
+fi
+
+case $selection in
+  nvim) export NVIM_APPNAME=nvim ;;
+  lazy) export NVIM_APPNAME=lazy ;;
+esac
+
+exec "${command[@]}" "$@"

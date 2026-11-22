@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  lib,
   inputs,
   ...
 }:
@@ -8,9 +9,22 @@
 {
   home = {
     username = "nikita";
+    sessionPath = [ "${config.home.homeDirectory}/nix/scripts" ];
+    sessionVariables = {
+      EDITOR = "ttyed";
+      VISUAL = "ttyed";
+    };
+    shellAliases = {
+      e = "ttyed --";
+      nvim = "env NVIM_APPNAME=nvim nvim";
+      lazy = "env NVIM_APPNAME=lazy nvim";
+    };
     file = {
       ".emacs".source = ./emacs/.emacs;
       ".emacs.d/acme-mouse.el".source = ./emacs/acme-mouse.el;
+      ".vimrc".text = ''
+        execute 'source ' . fnameescape('${config.xdg.configHome}/vim/shared.vim')
+      '';
     };
   };
 
@@ -24,7 +38,16 @@
 
   home.packages = [ pkgs.pure-prompt ];
 
+  xdg.configFile = {
+    "nvim/init.lua".source = ./editors/nvim/init.lua;
+    "vim/shared.vim".source = ./editors/shared.vim;
+  };
+
   programs = {
+    # LazyVim's generated init loads lazy.nvim directly from the Nix store.
+    # Avoid also installing it into the lean personality's package directory.
+    neovim.plugins = lib.mkForce [ ];
+
     zsh = {
       enable = true;
       package = pkgs.zsh;
@@ -46,9 +69,7 @@
         saveNoDups = true;
       };
       syntaxHighlighting.enable = true;
-      shellAliases = {
-        e = "nvim";
-      };
+
       initContent = ''
         if [[ -z $AI_AGENT$CLAUDECODE$CURSOR_AGENT$GEMINI_CLI$OPENCODE ]]; then
           autoload -U promptinit && promptinit
@@ -92,6 +113,7 @@
 
     lazyvim = {
       enable = true;
+      appName = "lazy";
 
       extras.lang = {
         nix.enable = true;
@@ -157,6 +179,8 @@
       };
 
       config.options = ''
+        vim.cmd.source(${builtins.toJSON "${config.xdg.configHome}/vim/shared.vim"})
+
               -- Use Nix-provided Lua 5.1/LuaRocks, retaining rock support.
         local rocks = require("lazy.core.config").options.rocks
         rocks.enabled = true

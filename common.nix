@@ -12,7 +12,6 @@
     };
 
     tmux.enable = true;
-    mosh.enable = true;
   };
 
   nix = {
@@ -35,9 +34,6 @@
   };
 
   environment = {
-    variables = {
-      EDITOR = "nvim";
-    };
     shells = with pkgs; [ zsh ];
     etc."dict.conf".text = "server dict.org";
   };
