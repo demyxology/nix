@@ -6,7 +6,6 @@
     antigravity-acp
     antigravity-cli
     antigravity-hub
-    antigravity-ide
     bat
     btop
     claude-code
@@ -42,6 +41,7 @@
     qemu
     ripgrep
     rlwrap
+    sshfs
     signal-desktop
     spotify
     tldr
@@ -57,6 +57,7 @@
   ];
 
   darwinPackages = with pkgs; [
+    antigravity-ide
     appcleaner
     coreutils-prefixed
     ghostty-bin
@@ -70,6 +71,7 @@
   nixosPackages = with pkgs; [
     # fails due to deprecated dependency on fuse2
     # _9pfs
+    antigravity-ide-fhs
     ardour
     dolphin-emu
     emote

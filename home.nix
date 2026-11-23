@@ -9,7 +9,10 @@
 {
   home = {
     username = "nikita";
-    sessionPath = [ "${config.home.homeDirectory}/nix/scripts" ];
+    sessionPath = [ 
+      "${config.home.homeDirectory}/nix/scripts"
+      "${config.home.homeDirectory}/.local/bin"
+    ];
     sessionVariables = {
       EDITOR = "ttyed";
       VISUAL = "ttyed";
@@ -52,6 +55,7 @@
       enable = true;
       package = pkgs.zsh;
       dotDir = config.home.homeDirectory;
+      defaultKeymap = "emacs";
       autosuggestion = {
         enable = true;
         strategy = [

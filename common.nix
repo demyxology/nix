@@ -20,8 +20,12 @@
     settings = {
       auto-optimise-store = true;
       experimental-features = [
-        "nix-command"
+        "auto-allocate-uids"
+        "ca-derivations"
+        "cgroups"
         "flakes"
+        "git-hashing"
+        "nix-command"
       ];
     };
 

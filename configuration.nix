@@ -41,6 +41,18 @@ in
 
   # powerManagement.cpuFreqGovernor = "performance";
 
+  # The main HDMI monitor drops hotplug when it goes into standby, which makes X
+  # remove it, re-layout and wake the other screens. Pin it as connected.
+  hardware.display = {
+    edid.packages = [
+      (pkgs.runCommand "main-hdmi-edid" {} ''
+        mkdir -p $out/lib/firmware/edid
+        cp ${./edid/main-hdmi.bin} $out/lib/firmware/edid/main-hdmi.bin
+      '')
+    ];
+    outputs."HDMI-A-1" = { edid = "main-hdmi.bin"; mode = "e"; };
+  };
+
   networking = {
     hostName = "nixos";
     nftables.enable = true;
@@ -209,6 +221,21 @@ in
 
   programs.steam.enable = true;
   programs.mosh.enable = true;
+
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      libglvnd # libEGL, libGLESv2
+      vulkan-loader
+      wayland
+      libxcb
+      libxkbcommon
+      pipewire
+      libpulseaudio
+      pam
+      webkitgtk_4_1 # web page blocks
+    ];
+  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
