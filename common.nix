@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 {
+
   fonts.packages = [
     (import ./berkeley-mono.nix { inherit pkgs; })
   ];
@@ -17,14 +18,13 @@
   };
 
   nix = {
+    package = pkgs.lixPackageSets.latest.lix;
     settings = {
       auto-optimise-store = true;
       experimental-features = [
         "auto-allocate-uids"
-        "ca-derivations"
         "cgroups"
         "flakes"
-        "git-hashing"
         "nix-command"
       ];
     };
@@ -39,6 +39,17 @@
 
   nixpkgs.config = {
     allowUnfree = true;
+
+    overlays = [
+      (final: prev: {
+        inherit (prev.lixPackageSets.stable)
+          nixpkgs-review
+          nix-eval-jobs
+          nix-fast-build
+          colmena
+          ;
+      })
+    ];
   };
 
   environment = {

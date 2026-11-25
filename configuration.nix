@@ -218,9 +218,6 @@ in
     ];
   };
 
-  # Use latest nix binary
-  nix.package = pkgs.nixVersions.latest;
-
   programs.steam.enable = true;
   programs.mosh.enable = true;
 
