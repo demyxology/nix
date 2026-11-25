@@ -8,6 +8,7 @@
 (setq-default gc-cons-percentage 0.5)
 (add-hook 'after-init-hook (lambda () (setq gc-cons-threshold 800000) (setq-default gc-cons-percentage 0.1)))
 
+
 (require 'package)
 (setq package-enable-at-startup nil)
 (package-initialize)
@@ -48,6 +49,10 @@
 (setq fast-but-imprecise-scrolling t
       redisplay-skip-fontification-on-input t
       inhibit-compacting-font-caches t)
+(setq read-file-name-completion-ignore-case t)
+(setq read-buffer-completion-ignore-case t)
+(setq completion-ignore-case  t)
+(setq case-fold-search t)
 
 ;; Key bindings.
 ;; Text manipulation.
@@ -123,6 +128,12 @@
   ;; Enable compilation results parsing in shell mode
   (add-hook 'shell-mode-hook 'compilation-shell-minor-mode))
 
+;; (when (eq system-type 'darwin)
+(when (daemonp)  
+  (use-package exec-path-from-shell
+    :ensure t)
+  (exec-path-from-shell-initialize))
+
 (global-set-key [remap dabbrev-expand] 'hippie-expand)
 
 (with-eval-after-load 'dired
@@ -142,11 +153,22 @@
   (history-length 10000))
 
 (use-package flymake
-  :defer t)
-
+  :defer t
+  :init
+  ;; Emacs 30+ refuses to run Flymake backends in files outside `trusted-content'.
+  ;; (setq trusted-content :all) ;; to whitelist everything if necessary
+  ;; add /nix/store/ if eglot-extend-to-xref breaks 
+  (add-to-list 'trusted-content "~/nix/")
+  (add-to-list 'trusted-content "~/code/"))
 ;; Completion and external packages.
 (use-package pretty-sha-path
   :ensure t)
+(use-package goto-last-change
+  :ensure t
+  :bind
+    (
+    ("M-m" . #'goto-last-change)
+    ))
 (use-package vundo
   :ensure t
   :commands vundo
@@ -172,7 +194,7 @@
   :ensure t
   :hook (prog-mode . company-mode)
   :config
-  (setq company-idle-delay 0.15)
+  (setq company-idle-delay 1)
   (setq company-minimum-prefix-length 2))
 (use-package which-key
   :ensure t
@@ -191,59 +213,47 @@
 (use-package ace-window
   :ensure t
   :bind (("M-o" . ace-window)))
-;; Nix editing and explicit formatting.
-(defun nixfmt-buffer ()
-  "Format the current buffer with nixfmt, leaving it unchanged on failure."
-  (interactive)
-  (barf-if-buffer-read-only)
-  (let ((program (or (executable-find "nixfmt")
-                     (user-error "Cannot find nixfmt in exec-path")))
-        (source-buffer (current-buffer))
-        (error-file (make-temp-file "nixfmt-errors-")))
-    (unwind-protect
-        (with-temp-buffer
-          (let ((output-buffer (current-buffer)))
-            (with-current-buffer source-buffer
-              (save-restriction
-                (widen)
-                (let ((status (call-process-region
-                               (point-min) (point-max) program nil
-                               (list output-buffer error-file) nil)))
-                  (unless (eq status 0)
-                    (user-error "nixfmt failed (%s): %s"
-                                status
-                                (with-temp-buffer
-                                  (insert-file-contents error-file)
-                                  (buffer-string))))
-                  (save-excursion
-                    (atomic-change-group
-                      (replace-buffer-contents output-buffer))))))))
-      (delete-file error-file))))
 
 (use-package nix-mode
+:after eglot
+:ensure t
+:config
+(setq lsp-nix-nixd-server-path "nixd"
+      lsp-nix-nixd-formatting-command [ "nixfmt" ]
+      lsp-nix-nixd-nixpkgs-expr "import <nixpkgs> { }"
+      lsp-nix-nixd-nixos-options-expr "(builtins.getFlake \"/home/nb/nixos\").nixosConfigurations.mnd.options"
+      lsp-nix-nixd-home-manager-options-expr "(builtins.getFlake \"/home/nb/nixos\").homeConfigurations.\"nb@mnd\".options"))
+
+(use-package nix-ts-mode
   :ensure t
-  :mode ("\\.nix\\'" "\\.nix.in\\'")
-  :bind (:map nix-mode-map
-              ("C-c C-f" . nixfmt-buffer)))
-(use-package nix-drv-mode
-  :ensure nix-mode
-  :mode "\\.drv\\'")
-(use-package nix-shell
-  :ensure nix-mode
-  :commands (nix-shell-unpack nix-shell-configure nix-shell-build))
-(use-package nix-repl
-  :ensure nix-mode
-  :commands (nix-repl))
+  :mode "\\.nix\\'")
+
+(add-hook 'nix-ts-mode-hook
+          (lambda ()
+            ;; enable autocompletion with company
+            (setq-local company-idle-delay 0.1)))
+
+;; Use built-in tree-sitter modes for C/C++ (grammars come from packages.nix).
+(setopt treesit-enabled-modes '(c-ts-mode c++-ts-mode))
+
+(use-package treesit-fold
+  :ensure t
+  :demand t
+  :config
+  (global-treesit-fold-mode 1)
+  :bind (:map treesit-fold-mode-map
+              ("C-c f" . treesit-fold-toggle)
+              ("C-c F" . treesit-fold-open-all)))
+
 (use-package rcirc
   :commands rcirc
   :config
   (add-to-list 'rcirc-server-alist
                '("irc.oftc.net"
                  :channels ("#cat-v"))))
-
 (use-package nerd-icons
   :ensure t)
-(load-file "~/.emacs.d/acme-mouse.el")
+(load-file "~/nix/emacs/acme-mouse.el")
 
 ;; theme
 (use-package doom-themes
@@ -280,13 +290,6 @@
   (setq completion-show-inline-help t)
   (setq completion-auto-select 'completion-at-point))
 
-(use-package tree-sitter
-  :ensure t
-  :hook (prog-mode . tree-sitter-mode)
-  :config
-  (use-package tree-sitter-langs
-    :ensure t))
-
 (use-package multiple-cursors
   :ensure t
   :bind (("C-S-c C-S-c" . mc/edit-lines)
@@ -299,12 +302,22 @@
   :hook ((c-mode . eglot-ensure)
          (c++-mode . eglot-ensure)
          (c-ts-mode . eglot-ensure)
-         (c++-ts-mode . eglot-ensure))
+         (c++-ts-mode . eglot-ensure)
+         (nix-ts-mode . eglot-ensure))
   :config
   (setq eglot-sync-connect nil)
   (setq eglot-connect-timeout 30)
   (setq eglot-report-progress t)
   (setq eglot-extend-to-xref t))
+
+(add-hook 'prog-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook 'eglot-format nil t)))
+
+;; add lsps here
+(with-eval-after-load 'eglot
+  (dolist (mode '(((nix-mode nix-ts-mode) . ("nixd"))))
+    (add-to-list 'eglot-server-programs mode)))
 
 ;; Process output tuning.
 (setq read-process-output-max (* 1024 1024))

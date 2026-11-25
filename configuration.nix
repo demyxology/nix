@@ -45,12 +45,15 @@ in
   # remove it, re-layout and wake the other screens. Pin it as connected.
   hardware.display = {
     edid.packages = [
-      (pkgs.runCommand "main-hdmi-edid" {} ''
+      (pkgs.runCommand "main-hdmi-edid" { } ''
         mkdir -p $out/lib/firmware/edid
         cp ${./edid/main-hdmi.bin} $out/lib/firmware/edid/main-hdmi.bin
       '')
     ];
-    outputs."HDMI-A-1" = { edid = "main-hdmi.bin"; mode = "e"; };
+    outputs."HDMI-A-1" = {
+      edid = "main-hdmi.bin";
+      mode = "e";
+    };
   };
 
   networking = {
@@ -63,12 +66,11 @@ in
     };
   };
 
-  systemd.services.tailscaled.serviceConfig.Environment = [ 
-    "TS_DEBUG_FIREWALL_MODE=nftables" 
+  systemd.services.tailscaled.serviceConfig.Environment = [
+    "TS_DEBUG_FIREWALL_MODE=nftables"
   ];
 
   systemd.network.wait-online.enable = false;
-
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -246,8 +248,7 @@ in
   };
 
   services.emacs = {
-    package = pkgs.emacs-gtk;
-    enable = true;
+    package = commonPkgs.withGrammars pkgs.emacs-gtk;
   };
 
   # Enable the OpenSSH daemon.
@@ -266,7 +267,7 @@ in
       enable = true;
       generateAtRuntime = true;
     };
-    
+
   };
 
   services.fail2ban.enable = true;

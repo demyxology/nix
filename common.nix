@@ -35,6 +35,8 @@
     enable = true;
   };
 
+  services.emacs.enable = true;
+
   nixpkgs.config = {
     allowUnfree = true;
   };

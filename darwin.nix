@@ -55,6 +55,8 @@ in
 
   security.pam.services.sudo_local.touchIdAuth = true;
 
+  services.emacs.package = commonPkgs.emacs;
+
   networking = {
     hostName = "dad";
     localHostName = "dad";
