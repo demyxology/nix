@@ -10,6 +10,22 @@
 
 let
   commonPkgs = import ./packages.nix { inherit pkgs; };
+  # x11vnc mirroring the logged-in X display; clip = "" for the whole desktop,
+  # or "xineramaN" for one monitor (N = X's monitor index, not desk position).
+  mkVnc = port: clip: {
+    description = "x11vnc - mirror ${
+      if clip == "" then "all monitors" else clip
+    } on port ${toString port}";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.x11vnc}/bin/x11vnc -display :0 ${
+        if clip == "" then "" else "-clip ${clip} "
+      }-forever -noxwarppointer -shared -rfbauth %h/.vnc/passwd -rfbport ${toString port}";
+      Restart = "always";
+      RestartSec = 3;
+    };
+  };
 in
 {
   imports = [
@@ -40,6 +56,12 @@ in
       /home/nikita    192.168.1.0/24(insecure,rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=100) 100.64.0.0/10(insecure,rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=100)
     '';
   };
+
+  # TODO: get mountable 9p server working
+  # services.diod = {
+  #   enable = true;
+  #   exports = [ "/home/nikita/" ];
+  # };
 
   services.samba = {
     enable = true;
@@ -85,19 +107,6 @@ in
     openFirewall = true;
   };
 
-  services.avahi = {
-    settings.publish = {
-      "disable-publishing" = false;
-      disable-user-service-publishing = false;
-      userServices = true;
-    };
-    # ^^ Needed to allow samba to automatically register mDNS records (without the need for an `extraServiceFile`
-    nssmdns4 = true;
-    # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
-    enable = true;
-    openFirewall = true;
-  };
-
   services.udev.extraRules = ''
     KERNEL=="ntsync", MODE="0660", GROUP="ntsync"
   '';
@@ -127,7 +136,13 @@ in
     firewall = {
       enable = true;
       trustedInterfaces = [ config.services.tailscale.interfaceName ];
-      allowedTCPPorts = [ 2049 ];
+      allowedTCPPorts = [
+        2049
+        5900
+        5901
+        5902
+        5903
+      ];
       allowedUDPPorts = [
         config.services.tailscale.port
         8376
@@ -201,7 +216,20 @@ in
     };
   };
 
+  # VNC (password in ~/.vnc/passwd): 5900 = all monitors, 5901-5903 = left/middle/right.
+  systemd.user.services.x11vnc = mkVnc 5900 "";
+  systemd.user.services.x11vnc-left = mkVnc 5901 "xinerama1"; # DP-1
+  systemd.user.services.x11vnc-middle = mkVnc 5902 "xinerama0"; # HDMI-1 (main)
+  systemd.user.services.x11vnc-right = mkVnc 5903 "xinerama2"; # HDMI-1-2
+
   services.cinnamon.apps.enable = true;
+
+  services.xrdp = {
+    enable = true;
+    # own session bus, so it doesn't clash with a local Cinnamon login
+    defaultWindowManager = "${pkgs.dbus}/bin/dbus-run-session -- cinnamon-session";
+    openFirewall = true;
+  };
 
   # programs.hyprland = {
   #   enable = true;
@@ -341,8 +369,7 @@ in
 
   services.flatpak.enable = true;
 
-  # build takes forever & fails randomly
-  # re-enable when u actually need it
+  # enabled just for kvm support
   virtualisation.virtualbox.host = {
     enable = false;
     enableKvm = true;
@@ -356,5 +383,4 @@ in
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.05"; # Did you read the comment?
-
 }
