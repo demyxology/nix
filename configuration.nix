@@ -33,6 +33,71 @@ in
 
   fileSystems."/".options = [ "noatime" ];
 
+  # squash force maps uids so i dont have to gaf, the two subnets are home & tailnet
+  services.nfs.server = {
+    enable = true;
+    exports = ''
+      /home/nikita    192.168.1.0/24(insecure,rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=100) 100.64.0.0/10(insecure,rw,sync,no_subtree_check,all_squash,anonuid=1000,anongid=100)
+    '';
+  };
+
+  services.samba = {
+    enable = true;
+    openFirewall = true;
+    settings = {
+      global = {
+        "workgroup" = "WORKGROUP";
+        "server string" = "smbnix";
+        "netbios name" = "smbnix";
+        "security" = "user";
+        #"use sendfile" = "yes";
+        #"max protocol" = "smb2";
+        # LAN, tailnet (v4 + v6), loopback
+        "hosts allow" = "192.168.1.0/24 100.64.0.0/10 fd7a:115c:a1e0::/48 127.0.0.1 ::1";
+        "hosts deny" = "0.0.0.0/0 ::/0";
+        "guest account" = "nobody";
+        "map to guest" = "bad user";
+      };
+      # "public" = {
+      #   "path" = "/mnt/Shares/Public";
+      #   "browseable" = "yes";
+      #   "read only" = "no";
+      #   "guest ok" = "yes";
+      #   "create mask" = "0644";
+      #   "directory mask" = "0755";
+      #   "force user" = "username";
+      #   "force group" = "groupname";
+      # };
+      "private" = {
+        "path" = "/home/nikita";
+        "browseable" = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "valid users" = "nikita";
+        "create mask" = "0644";
+        "directory mask" = "0755";
+      };
+    };
+  };
+
+  services.samba-wsdd = {
+    enable = true;
+    openFirewall = true;
+  };
+
+  services.avahi = {
+    settings.publish = {
+      "disable-publishing" = false;
+      disable-user-service-publishing = false;
+      userServices = true;
+    };
+    # ^^ Needed to allow samba to automatically register mDNS records (without the need for an `extraServiceFile`
+    nssmdns4 = true;
+    # ^^ Not one hundred percent sure if this is needed- if it aint broke, don't fix it
+    enable = true;
+    openFirewall = true;
+  };
+
   services.udev.extraRules = ''
     KERNEL=="ntsync", MODE="0660", GROUP="ntsync"
   '';
@@ -62,7 +127,11 @@ in
     firewall = {
       enable = true;
       trustedInterfaces = [ config.services.tailscale.interfaceName ];
-      allowedUDPPorts = [ config.services.tailscale.port ];
+      allowedTCPPorts = [ 2049 ];
+      allowedUDPPorts = [
+        config.services.tailscale.port
+        8376
+      ];
     };
   };
 
@@ -189,6 +258,7 @@ in
       "networkmanager"
       "wheel"
       "ntsync"
+      "samba"
     ];
     shell = pkgs.zsh;
     packages = with pkgs; [
